@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Color Token Generator</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500&display=swap" rel="stylesheet">
+
+  <!-- Shoelace Theme & Components -->
+  <link id="theme-style" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0-beta.48/dist/themes/light.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0-beta.48/dist/shoelace.js"></script>
+
+  <!-- Chroma.js for color manipulation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.1.2/chroma.min.js"></script>
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ff6b81" id="theme-color-meta">
+
+  <style>
+    html {
+      --spacing: 1.5rem;
+      --swatch-size: 60px;
+      box-sizing: border-box;
+      font-family: 'Comfortaa', cursive;
+    }
+
+    *, *:before, *:after {
+      box-sizing: inherit;
+    }
+
+    body {
+      background: #fefefe;
+      font-size: 16px;
+      font-family: 'Comfortaa', cursive;
+      display: flex;
+      flex-direction: column;
+      place-items: center;
+      padding: var(--spacing);
+      margin: 0;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .mode-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 999;
+    }
+
+    main {
+      display: inline-block;
+      text-align: center;
+      padding: var(--spacing);
+      background: #fff9f9;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      max-width: 800px;
+      width: 100%;
+      position: relative;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 500;
+      margin-bottom: var(--spacing);
+      color: #ff6b81;
+    }
+
+    .subheader {
+      font-size: 1rem;
+      color: #aaa;
+      margin-bottom: var(--spacing);
+    }
+
+    sl-card {
+      margin: 0 auto;
+      border-radius: 16px;
+      background-color: #ffffffee;
+      backdrop-filter: blur(5px);
+      transition: all 0.3s ease;
+    }
+
+    sl-card::part(base) {
+      --padding: var(--spacing);
+      border: none;
+      box-shadow: var(--sl-shadow-large);
+      border-radius: 16px;
+    }
+
+    #result {
+      display: grid;
+      grid-template-columns: repeat(11, var(--swatch-size));
+      gap: 6px;
+      justify-content: center;
+      margin-bottom: var(--spacing);
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .swatch {
+      width: var(--swatch-size);
+      height: var(--swatch-size);
+      border-radius: 12px;
+      transition: transform 0.2s ease;
+    }
+
+    .swatch:hover {
+      transform: scale(1.1);
+    }
+
+    .inputs {
+      display: flex;
+      gap: var(--spacing);
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .left, .right {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing);
+      min-width: 250px;
+    }
+
+    sl-color-picker::part(base), sl-input::part(input), sl-textarea::part(textarea) {
+      border-radius: 12px;
+    }
+
+    sl-textarea::part(textarea) {
+      font-family: var(--sl-font-mono);
+      font-size: 14px;
+      height: 300px;
+      resize: none;
+    }
+
+    .copy-btn {
+      padding: 0.5em 1em;
+      background: #ff6b81;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .copy-btn:hover {
+      background: #ff4757;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: calc(var(--spacing) / 2);
+      color: #aaa;
+      font-size: 0.9rem;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Dark Mode Styles */
+    body.dark-mode {
+      background: #1e1e2f;
+      color: #eee;
+    }
+
+    main.dark-mode {
+      background: #2c2c3e;
+    }
+
+    .subheader.dark-mode {
+      color: #ccc;
+    }
+
+    sl-card.dark-mode::part(base) {
+      background-color: #3c3c4e;
+    }
+
+    footer.dark-mode {
+      color: #bbb;
+    }
+
+    @media screen and (max-width: 900px) {
+      html {
+        --spacing: 1rem;
+        --swatch-size: 40px;
+      }
+
+      #result {
+        grid-template-columns: repeat(6, 1fr);
+      }
+
+      sl-textarea::part(textarea) {
+        height: 150px;
+      }
+    }
+  </style>
+</head>
+
+<body translate="no">
+  <!-- Dark Mode Toggle -->
+  <button class="mode-toggle" onclick="toggleMode()">
+    <img id="mode-icon" src="https://cdn-icons-png.flaticon.com/512/745/74594.png" alt="Toggle Mode" width="24" />
+  </button>
+
+  <main id="app">
+    <h1>🎨 Color Token Generator <span class="subheader" id="subheader">@ethiocodecomm</span></h1>
+
+    <sl-card id="color-card">
+      <div id="result"></div>
+
+      <div class="inputs">
+        <div class="left">
+          <sl-color-picker inline value="#4a90e2"></sl-color-picker>
+          <sl-input name="name" placeholder="Color Name (e.g. primary)" value="primary" size="small">
+            <sl-icon slot="suffix" name="palette"></sl-icon>
+          </sl-input>
+        </div>
+        <div class="right">
+          <sl-textarea name="tokens" readonly resize="none"></sl-textarea>
+          <button class="copy-btn" onclick="copyTokens()">📋 Copy Tokens</button>
+        </div>
+      </div>
+    </sl-card>
+
+    <footer class="footer">
+      Made by <strong>Dagim Abebe</strong>
+    </footer>
+  </main>
+
+  <script>
+    const colorPicker = document.querySelector('sl-color-picker');
+    const nameInput = document.querySelector('sl-input[name="name"]');
+    const outputTextarea = document.querySelector('sl-textarea[name="tokens"]');
+    const result = document.querySelector('#result');
+
+    function update() {
+      if (!chroma.valid(colorPicker.value)) return;
+
+      const colorScale = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
+      const hex = chroma(colorPicker.value).hex();
+      const scale = chroma.scale([
+        chroma(hex).luminance(.95),
+        chroma(hex).luminance(.84),
+        chroma(hex).luminance(.73),
+        chroma(hex).luminance(.62),
+        chroma(hex).luminance(.49),
+        chroma(hex).luminance(.35),
+        chroma(hex).luminance(.23),
+        chroma(hex).luminance(.15),
+        chroma(hex).luminance(.10),
+        chroma(hex).luminance(.05),
+        chroma(hex).luminance(.02)
+      ]).colors(colorScale.length);
+
+      const name = nameInput.value.trim().toLowerCase() || 'custom';
+      let swatches = '';
+      let tokens = '';
+
+      scale.forEach((color, index) => {
+        const rgb = chroma(color).rgb();
+        swatches += `<div class="swatch" style="background-color: ${color};"></div>`;
+        tokens += `--sl-color-${name}-${colorScale[index]}: rgb(${rgb.join(' ')});\n`;
+      });
+
+      result.innerHTML = swatches;
+      outputTextarea.value = `/* Copy & paste into your theme */\n\n${tokens}`;
+    }
+
+    colorPicker.addEventListener('sl-change', update);
+    nameInput.addEventListener('sl-input', update);
+
+    window.addEventListener('DOMContentLoaded', update);
+
+    // Dark Mode Toggle
+    function toggleMode() {
+      document.body.classList.toggle('dark-mode');
+      document.getElementById("app").classList.toggle('dark-mode');
+      document.getElementById("color-card").classList.toggle('dark-mode');
+      document.getElementById("subheader").classList.toggle('dark-mode');
+      document.getElementById("mode-icon").src = document.body.classList.contains('dark-mode')
+        ? "https://cdn-icons-png.flaticon.com/512/1163/1163661.png"
+        : "https://cdn-icons-png.flaticon.com/512/745/74594.png";
+
+      document.getElementById("theme-color-meta").setAttribute("content", document.body.classList.contains('dark-mode') ? "#1e1e2f" : "#ff6b81");
+    }
+
+    // Copy Tokens
+    function copyTokens() {
+      outputTextarea.select();
+      outputTextarea.setSelectionRange(0, 99999);
+      document.execCommand("copy");
+      alert("Tokens copied to clipboard!");
+    }
+
+    // PWA Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js').then(registration => {
+          console.log('Service Worker registered:', registration);
+        }).catch(error => {
+          console.log('Service Worker registration failed:', error);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
