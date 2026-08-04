@@ -1,1 +1,1 @@
-# colors-token-generator
+# colors-token-generator-pure-html
